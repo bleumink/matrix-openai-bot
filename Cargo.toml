@@ -9,7 +9,6 @@ authors = ["Gideon Bleumink <gideon@spacebased.nl>"]
 anyhow = "1.0.98"
 clap = { version = "4.5.46", features = ["derive", "env"] }
 futures = "0.3.31"
-# matrix-appservice = { path = "../matrix-appservice" }
 matrix-appservice = { git = "https://github.com/bleumink/matrix-appservice" }
 reqwest = { version = "0.12.21", features = ["json"] }
 schemars = "1.0.4"

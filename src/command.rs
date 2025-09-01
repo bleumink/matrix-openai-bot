@@ -1,4 +1,10 @@
-use matrix_appservice::{exports::matrix_sdk::ruma::{events::room::message::{RoomMessageEventContent, RoomMessageEventContentWithoutRelation}, OwnedEventId}, Device};
+use matrix_appservice::{
+    Device,
+    exports::matrix_sdk::ruma::{
+        OwnedEventId,
+        events::room::message::{RoomMessageEventContent, RoomMessageEventContentWithoutRelation},
+    },
+};
 use serde_json::json;
 
 use crate::openai::Processed;
@@ -30,12 +36,12 @@ impl Command {
     }
 
     pub async fn send_message(&self, device: &Device, relates_to: OwnedEventId) -> anyhow::Result<()> {
-        let content = RoomMessageEventContentWithoutRelation::text_markdown(self.as_str());        
+        let content = RoomMessageEventContentWithoutRelation::text_markdown(self.as_str());
         let relation_body = json!({
             "rel_type": "nl.spacebased.matrix-openai-bot.bot_response",
             "relates_to": relates_to,
         });
-        
+
         // content.with_relation(Some(serde_json::from_value(relation_body)?));
         Ok(())
     }

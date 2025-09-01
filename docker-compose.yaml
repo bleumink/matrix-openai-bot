@@ -1,8 +1,6 @@
 services:
   matrix-openapi-bot:
-    build:
-      context: .
-      target: appservice
+    image: ghcr.io/bleumink/matrix-openai-bot:latest
     ports:
       - 24177:24177
 

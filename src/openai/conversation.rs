@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::HashMap, sync::Arc};
 
 use anyhow::Context;
-use futures::{future, StreamExt, TryStreamExt};
+use futures::{StreamExt, TryStreamExt, future};
 use matrix_appservice::{
     ApplicationService, Device, Direction, Room, State, User,
     exports::matrix_sdk::ruma::{
@@ -24,9 +24,13 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio::sync::{Mutex, RwLock};
 
-use crate::{command::Command, openai::{
-    tools::{AssistantAction, Tool}, Config, MessageContent, OpenAIConfig, OpenAIMessage, OpenAIResponse, Role
-}};
+use crate::{
+    command::Command,
+    openai::{
+        Config, MessageContent, OpenAIConfig, OpenAIMessage, OpenAIResponse, Role,
+        tools::{AssistantAction, Tool},
+    },
+};
 
 #[derive(Debug)]
 
@@ -110,7 +114,7 @@ impl ConversationStore {
         let device = user.get_device().await.context("Device not found")?;
         let events = futures::stream::iter(event_ids)
             .map(|event_id| {
-                let device = Arc::clone(&device);                
+                let device = Arc::clone(&device);
                 async move {
                     let raw_event = room.get_raw_event(&event_id).await?;
                     let extracted = raw_event.deserialize_as::<ExtractType<'_>>()?;
@@ -135,7 +139,7 @@ impl ConversationStore {
 pub struct Conversation<'a> {
     appservice: &'a ApplicationService<State<Arc<ConversationStore>>>,
     config: OpenAIConfig,
-    user: &'a User,    
+    user: &'a User,
     room: &'a Room,
     device: Arc<Device>,
     messages: Mutex<Vec<OpenAIMessage>>,
@@ -149,10 +153,7 @@ impl Conversation<'_> {
         device: Arc<Device>,
         events: &[OriginalSyncRoomMessageEvent],
     ) -> anyhow::Result<Conversation<'a>> {
-        let messages = events
-            .iter()
-            .map(|event| create_message(user.id(), event))
-            .collect();
+        let messages = events.iter().map(|event| create_message(user.id(), event)).collect();
 
         let config = appservice.get_user_fields::<Config>()?.openai;
         let conversation = Conversation {
@@ -180,12 +181,13 @@ impl Conversation<'_> {
             .room
             .get_raw_message_stream(Direction::Backward)
             .then(|raw| async { self.process_raw_event(raw?).await })
-            .try_filter_map(|maybe| future::ready(Ok(maybe)) )
-            .scan((), |_, result| 
+            .try_filter_map(|maybe| future::ready(Ok(maybe)))
+            .scan((), |_, result| {
                 future::ready(match result {
-                    Ok(Processed::Continue(id, message)) => Some((id, message)),                    
-                    Ok(Processed::Stop) | Err(_) => None,                              
-            }))
+                    Ok(Processed::Continue(id, message)) => Some((id, message)),
+                    Ok(Processed::Stop) | Err(_) => None,
+                })
+            })
             .collect::<Vec<_>>()
             .await
             .into_iter()
@@ -209,7 +211,7 @@ impl Conversation<'_> {
             content: Some(MessageContent::Text(prompt)),
             tool_calls: Vec::new(),
         });
-        
+
         let body = self.create_prompt_body(&messages)?;
         let request = self
             .client()
@@ -251,11 +253,11 @@ impl Conversation<'_> {
     }
 
     async fn process_raw_event(&self, raw_event: Raw<AnySyncTimelineEvent>) -> anyhow::Result<Option<Processed>> {
-        fn handle_event(user_id: &UserId, event: OriginalSyncRoomMessageEvent) -> anyhow::Result<Option<Processed>> {                    
+        fn handle_event(user_id: &UserId, event: OriginalSyncRoomMessageEvent) -> anyhow::Result<Option<Processed>> {
             if let Some(command) = Command::parse(event.content.body()) {
-                return Ok(command.into_processed())
+                return Ok(command.into_processed());
             }
-            
+
             let message = create_message(user_id, &event);
             Ok(Some(Processed::Continue(event.event_id, message)))
         }
@@ -267,7 +269,7 @@ impl Conversation<'_> {
                 return Ok(None);
             }
         };
-        
+
         match extracted.event_type.as_ref() {
             "m.room.member" => {
                 let event = raw_event.deserialize_as::<StrippedRoomMemberEvent>()?;

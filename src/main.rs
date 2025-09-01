@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
 use anyhow::Context;
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use matrix_appservice::{
+    ApplicationService, ApplicationServiceBuilder, EventContext, State,
     exports::matrix_sdk::ruma::events::room::{
         member::{MembershipChange, StrippedRoomMemberEvent},
         message::{OriginalSyncRoomMessageEvent, RoomMessageEventContent},
-    }, ApplicationService, ApplicationServiceBuilder, EventContext, State
+    },
 };
 
 use crate::{
@@ -17,27 +18,58 @@ use crate::{
 mod command;
 mod openai;
 
-#[derive(Parser, Debug)]
+#[derive(Debug, Parser)]
 #[command(name = "matrix-openai-bot", version, about)]
 struct Cli {
-    /// Configuration file path
-    #[arg(
-        short,
-        long,
-        env = "CONFIG_PATH",
-        default_value = "./config.yaml",
-        help = "Path to the appservice configuration YAML file."
-    )]
-    config: String,
+    #[command(subcommand)]
+    command: CliCommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum CliCommand {
+    /// Start the appservice
+    Run {
+        /// Configuration file path
+        #[arg(
+            short,
+            long,
+            env = "APPSERVICE_CONFIG_PATH",
+            default_value = "./config.yaml",
+            help = "Path to the appservice configuration YAML file."
+        )]
+        config: String,
+    },
+    /// Generate the YAML registration file for Synapse
+    Generate {
+        /// Configuration file path
+        #[arg(
+            short,
+            long,
+            env = "APPSERVICE_CONFIG_PATH",
+            default_value = "./config.yaml",
+            help = "Path to the appservice configuration YAML file."
+        )]
+        config: String,
+        /// Output file, or "-" for stdout
+        #[arg(short, long, default_value = "-")]
+        output: String,
+    },
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     let cli = Cli::parse();
-    
-    let appservice = ApplicationServiceBuilder::new()        
-        .configuration_file(&cli.config)        
+
+    match cli.command {
+        CliCommand::Run { config } => run(&config).await,
+        CliCommand::Generate { config, output } => generate(&config, &output).await,
+    }
+}
+
+async fn run(config_path: &str) -> anyhow::Result<()> {
+    let appservice = ApplicationServiceBuilder::new()
+        .configuration_file(config_path)
         .build()
         .await?;
 
@@ -51,6 +83,24 @@ async fn main() -> anyhow::Result<()> {
     if let Err(error) = appservice.run().await {
         tracing::error!("Application service encountered an fatal error // {}", error);
         return Err(error.into());
+    }
+
+    Ok(())
+}
+
+async fn generate(config_path: &str, output: &str) -> anyhow::Result<()> {
+    let appservice = ApplicationServiceBuilder::new()
+        .configuration_file(config_path)
+        .build()
+        .await?;
+
+    let registration = appservice.generate_registration()?;
+    match output {
+        "-" => println!("{registration}"),
+        path => {
+            std::fs::write(path, registration)?;
+            tracing::info!("Registration file written to {path}");
+        }
     }
 
     Ok(())
@@ -104,27 +154,25 @@ async fn on_room_message(
     // Is input an appservice command?
     if let Some(command) = Command::parse(event.content.body()) {
         match command {
-            Command::Reset => appservice.state().clear(user.id(), room.id()).await,            
-            _ => (),          
+            Command::Reset => appservice.state().clear(user.id(), room.id()).await,
+            _ => (),
         }
 
         return Ok(());
     }
 
-    device.send_receipt(room.id(), &event.event_id).await?;
     device.send_typing(room.id(), true).await?;
 
-    let conversation = appservice
-        .state()
-        .get_conversation(&appservice, &user, &room)
-        .await?;
+    let conversation = appservice.state().get_conversation(&appservice, &user, &room).await?;
 
     if conversation.is_empty().await && is_direct {
         conversation.backfill().await?;
     }
 
     let response = conversation.send_prompt(event.content.body().to_string()).await?;
-    let response_id = device.send_message(room.id(), RoomMessageEventContent::text_markdown(response)).await?;
+    let response_id = device
+        .send_message(room.id(), RoomMessageEventContent::text_markdown(response))
+        .await?;
     conversation.insert_dialog(event.event_id, response_id).await;
 
     device.send_typing(room.id(), false).await?;
