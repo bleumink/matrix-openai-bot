@@ -10,9 +10,9 @@ Conversations are tracked for direct messages with the bot. In group chats the b
 This bot is under development. Expect additional features, documentation and cleanup in the future.
 
 ## Usage
-### Create a configuration file
+#### Create a configuration file
 Use ```example.yaml``` as a template.
-### Create an appservice registration file
+#### Create an appservice registration file
 The easiest way to create this is using the docker image:
 ```bash
 docker run -v /path/to/config.yaml:/data/config.yaml ghcr.io/bleumink/matrix-openai-bot:latest generate
@@ -25,7 +25,7 @@ org.matrix.msc3202: true
 io.element.msc4190: true
 ```
 
-### Register the bot with Synapse
+#### Register the bot with Synapse
 Edit your Synapse homeserver configuration to register the appservice and opt-in to several experimental features. This is using the cutting edge after all.
 ```yaml
 app_service_config_files:
@@ -37,7 +37,7 @@ experimental_features:
   msc3202_transaction_extensions: true
 ```
 
-### Run the bot
+#### Run the bot
 This can be done using Docker:
 ```bash
 docker run -v /path/to/config.yaml:/data/config.yaml ghcr.io/bleumink/matrix-openai-bot:latest

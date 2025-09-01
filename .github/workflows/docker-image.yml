@@ -31,9 +31,9 @@ jobs:
 
     - name: Build and push
       run: |
-        IMAGE_NAME=ghcr.io/bleumink/matrix-openai-bot
+        IMAGE_NAME="ghcr.io/bleumink/matrix-openai-bot"
         docker buildx build \
-          --platform linux/amd64,linux/arm64 \          
+          --platform linux/amd64,linux/arm64 \
           --file Dockerfile \
           --tag $IMAGE_NAME:${{ github.sha }} \
           --tag $IMAGE_NAME:latest \
