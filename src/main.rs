@@ -34,10 +34,10 @@ enum CliCommand {
             short,
             long,
             env = "APPSERVICE_CONFIG_PATH",
-            default_value = "./config.yaml",
+            default_value = "config.yaml",
             help = "Path to the appservice configuration YAML file."
         )]
-        config: String,
+        config: String,    
     },
     /// Generate the YAML registration file for Synapse
     Generate {
@@ -46,10 +46,10 @@ enum CliCommand {
             short,
             long,
             env = "APPSERVICE_CONFIG_PATH",
-            default_value = "./config.yaml",
+            default_value = "config.yaml",
             help = "Path to the appservice configuration YAML file."
         )]
-        config: String,
+        config: String,    
         /// Output file, or "-" for stdout
         #[arg(short, long, default_value = "-")]
         output: String,

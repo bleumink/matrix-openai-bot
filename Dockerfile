@@ -37,6 +37,8 @@ RUN adduser \
 USER appuser
 
 COPY --from=build /bin/appservice /bin/
+WORKDIR /data
 
 EXPOSE 24177
-CMD ["/bin/appservice"]
+ENTRYPOINT ["/bin/appservice"]
+CMD ["run"]
