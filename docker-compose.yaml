@@ -1,13 +1,14 @@
 
 services:
   matrix-openapi-bot:
-    environment:
-      - APPSERVICE_CONFIG_PATH=/data/config.yaml
     image: ghcr.io/bleumink/matrix-openai-bot:latest
+    restart: unless-stopped
+    environment:
+      - APPSERVICE_CONFIG_PATH=/data/config.yaml        
     ports:
       - 24177:24177
     volumes:
-      - /src/docker/matrix-openai-bot/config.yaml:/data/config.yaml
+      - /path/to/config.yaml:/data/config.yaml
       - database:/data
 
 volumes:

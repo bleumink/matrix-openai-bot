@@ -27,7 +27,7 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum CliCommand {
-    /// Start the appservice
+    /// Start the application service
     Run {
         /// Configuration file path
         #[arg(

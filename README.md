@@ -12,6 +12,7 @@ This bot is under development. Expect additional features, documentation and cle
 ## Usage
 #### Create a configuration file
 Use ```example.yaml``` as a template.
+
 #### Create an appservice registration file
 The easiest way to create this is using the docker image:
 ```bash
