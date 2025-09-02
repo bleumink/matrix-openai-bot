@@ -1908,7 +1908,7 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 [[package]]
 name = "matrix-appservice"
 version = "0.1.0"
-source = "git+https://github.com/bleumink/matrix-appservice#5e19d3931d8247dab5cc13ade2553451ae8cf344"
+source = "git+https://github.com/bleumink/matrix-appservice#29c7130950947d49fcd4b37b6f621717ae3068a9"
 dependencies = [
  "async-stream",
  "axum",
